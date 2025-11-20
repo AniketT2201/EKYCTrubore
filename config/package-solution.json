@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "ekyc-trubore-client-side-solution",
+    "id": "87440695-152c-431c-b4ba-11ed331e6818",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.21.1"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "EKYCTrubore description"
+      },
+      "longDescription": {
+        "default": "EKYCTrubore description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "ekyc-trubore Feature",
+        "description": "The feature that activates elements of the ekyc-trubore solution.",
+        "id": "801db559-5527-4a73-bdc3-918ebe57bbed",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/ekyc-trubore.sppkg"
+  }
+}

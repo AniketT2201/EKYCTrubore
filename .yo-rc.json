@@ -1,0 +1,18 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "22.16.0",
+    "sdksVersions": {},
+    "version": "1.21.1",
+    "libraryName": "ekyc-trubore",
+    "libraryId": "87440695-152c-431c-b4ba-11ed331e6818",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "EKYCTrubore",
+    "solutionShortDescription": "EKYCTrubore description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}
