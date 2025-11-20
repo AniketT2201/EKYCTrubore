@@ -149,7 +149,7 @@ const columnsConfig = [
   { 
     header: "Attachment", key: "Attachment", 
     render: (item: IEKYC) => (
-      <Link to={`/Attachmentpage?itemID=${item.Id}`} className="clickable-text">
+      <Link to={`/Attachmentpage?itemId=${item.Id}`} className="clickable-text">
       Attachment
     </Link>
     )
@@ -756,7 +756,7 @@ const handleClose = async () => {
   // }
   
   return (
-    <div className={`pageContainer fade-in ${visible ? 'visible' : ''}`}>
+    <div className={`pageContainer `}>
       <div className={`menuWrapper fade-in ${visible ? 'visible' : ''}`} style={{ transitionDelay: '0.4s'}}>
         <div className ="Logo">
           <img src={logo}alt="Logo" />
