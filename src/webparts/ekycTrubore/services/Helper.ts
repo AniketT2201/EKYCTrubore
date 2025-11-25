@@ -8,16 +8,14 @@
 //             day: "2-digit",
 //         }).format(new Date(dateStr));
 //     };
-
-
+import { IEkycTruboreProps } from "../components/IEkycTruboreProps";
  
-export default class Helper {
-  
  
-    
  
-     
  
-}
  
+ // Helper function to create a delay
+export const delay = (ms: number): Promise<void> => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
 

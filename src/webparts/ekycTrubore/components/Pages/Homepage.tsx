@@ -92,6 +92,12 @@ export const Homepage: React.FunctionComponent<IEkycTruboreProps> = (props: IEky
   const [isClosing, setIsClosing] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
+  const [errors, setErrors] = useState({
+    NationalHead: "",
+    ZonalHead: "",
+    StateHead: ""
+  });
+
   const [formData, setFormData] = useState<IEKYC>({
     Id : '',
     EmployeeCode : '',
@@ -421,9 +427,9 @@ const columnsConfig = [
 
       setFormData({
         ...item,
-        NationalHeadEmail: item.NantionalHeadName,
-        ZonalHeadEmail: item.ZoneHeadName,
-        StateHeadEmail: item.StateHeadName,
+        NationalHeadEmail: item.NantionalHeadNameT,
+        ZonalHeadEmail: item.ZoneHeadNameT,
+        StateHeadEmail: item.StateHeadNameT,
         SecurityCode: item.SecurityCode,
       });
 
@@ -674,6 +680,30 @@ const handleClose = async () => {
   }
 };
 
+const validateForm = () => {
+  let newErrors = { NationalHead: "", ZonalHead: "", StateHead: "" };
+  let isValid = true;
+
+  if (!formData.NationalHeadEmail || formData.NationalHeadEmail.length === 0) {
+    newErrors.NationalHead = "National Head is required.";
+    isValid = false;
+  }
+
+  if (!formData.ZonalHeadEmail || formData.ZonalHeadEmail.length === 0) {
+    newErrors.ZonalHead = "Zonal Head is required.";
+    isValid = false;
+  }
+
+  if (!formData.StateHeadEmail || formData.StateHeadEmail.length === 0) {
+    newErrors.StateHead = "State Head is required.";
+    isValid = false;
+  }
+
+  setErrors(newErrors);
+  return isValid;
+};
+
+
 
   // Initialize PnP Logic
   // useEffect(() => {
@@ -837,7 +867,7 @@ const handleClose = async () => {
 
       
       <div className={`Table-container fade-in ${visible ? 'visible' : ''}`} style={{ transitionDelay: '1.4s'}}>
-        <table className={`"Table responsive-table" ${visible ? 'visible' : ''}`} style={{ transitionDelay: '1.6s'}}>
+        <table className={`Table responsive-table ${visible ? 'visible' : ''}`} style={{ transitionDelay: '1.6s'}}>
           <thead className="Table-header">
             <tr className="Header-rows">
               {columnsConfig.map(col => (
@@ -845,10 +875,10 @@ const handleClose = async () => {
               ))}
             </tr>
           </thead>
-          <tbody className={`"Table-body" ${visible ? 'visible' : ''}`} style={{ transitionDelay: '0.2s'}}>
+          <tbody className={`Table-body ${visible ? 'visible' : ''}`} style={{ transitionDelay: '0.2s'}}>
             {currentRows.length > 0 ? (
               currentRows.map((item, index) => (
-                <tr key={index} className={`"Body-rows" ${index % 2 === 0 ? "even" : "odd"}`}>
+                <tr key={index} className={`Body-rows ${visible ? 'visible' : ''} ${index % 2 === 0 ? "even" : "odd"}`}>
                   {columnsConfig.map((col) => (
                     <td key={col.key} className="Body-data">
                       {col.render
@@ -911,6 +941,10 @@ const handleClose = async () => {
                 alert("Invalid Employee Code. Please enter a valid code.");
                 return;
               } 
+              if (!validateForm()) {
+                console.log("Validation failed");
+                return;
+              }
               handleSubmit();
               }}>
               {/* Employee Details */}
@@ -945,93 +979,122 @@ const handleClose = async () => {
                 </div>
               </div>
               {/* Document Details */}
-              {/*<h3 className="form-section-title">Approver</h3>
-              {/* <div className="form-grid-2">
-                {/* National Head 
-                <div className="form-group">
-                  <label>National Head*</label>
-                  <PeoplePicker
-                    context={{
-                      absoluteUrl: props.currentSPContext.pageContext.web.absoluteUrl,  // ✅ no more undefined
-                      spHttpClient: props.currentSPContext.spHttpClient,
-                      msGraphClientFactory: props.currentSPContext.msGraphClientFactory
-                    }}
-                    titleText=""
-                    personSelectionLimit={1}
-                    showtooltip={true}
-                    ensureUser={true}
-                    disabled={isViewMode}
-                    required={true}
-                    onChange={(items: any[]) => handlePeopleChange("NationalHead", items)}
-                    principalTypes={[PrincipalType.User]}
-                    resolveDelay={500}
-                  />
-                </div>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    value={formData.NationalHeadEmail || ""}
-                    readOnly
-                  />
-                </div>
+              {formData.Department && (
+                <div>
+                  <h3 className="form-section-title">Approver</h3>
+                  <div className="form-grid-2">
+                    {/* National Head */}
+                    <div className="form-group">
+                      <label>National Head*</label>
+                      <PeoplePicker
+                        context={{
+                          absoluteUrl: props.currentSPContext.pageContext.web.absoluteUrl,  // ✅ no more undefined
+                          spHttpClient: props.currentSPContext.spHttpClient,
+                          msGraphClientFactory: props.currentSPContext.msGraphClientFactory
+                        }}
+                        titleText=""
+                        personSelectionLimit={1}
+                        showtooltip={true}
+                        ensureUser={true}
+                        disabled={isViewMode}
+                        required={true}
+                        onChange={(items) => {
+                          handlePeopleChange("NationalHead", items);
+                          setErrors(prev => ({ ...prev, NationalHead: "" }));
+                        }}
+                        principalTypes={[PrincipalType.User]}
+                        resolveDelay={500}
+                      />
+                      {errors.NationalHead && (
+                        <span style={{ color: "red", fontSize: 12 }}>
+                          {errors.NationalHead}
+                        </span>
+                      )}
+                    </div>
+                    <div className="form-group">
+                      <input
+                        type="text"
+                        value={formData.NationalHeadEmail || ""}
+                        readOnly
+                      />
+                    </div>
 
-                {/* Zonal Head 
-                <div className="form-group">
-                  <label>Zonal Head*</label>
-                  <PeoplePicker
-                    context={{
-                      absoluteUrl: props.currentSPContext.pageContext.web.absoluteUrl,  // ✅ no more undefined
-                      spHttpClient: props.currentSPContext.spHttpClient,
-                      msGraphClientFactory: props.currentSPContext.msGraphClientFactory
-                    }}
-                    titleText=""
-                    personSelectionLimit={1}
-                    showtooltip={true}
-                    ensureUser={true}
-                    disabled={isViewMode}
-                    required={true}
-                    onChange={(items: any[]) => handlePeopleChange("ZonalHead", items)}
-                    principalTypes={[PrincipalType.User]}
-                    resolveDelay={500}
-                  />
-                </div>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    value={formData.ZonalHeadEmail || ""}
-                    readOnly
-                  />
-                </div>
+                    {/* Zonal Head */}
+                    <div className="form-group">
+                      <label>Zonal Head*</label>
+                      {/* <PeoplePicker
+                        context={{
+                          absoluteUrl: props.currentSPContext.pageContext.web.absoluteUrl,  // ✅ no more undefined
+                          spHttpClient: props.currentSPContext.spHttpClient,
+                          msGraphClientFactory: props.currentSPContext.msGraphClientFactory
+                        }}
+                        titleText=""
+                        personSelectionLimit={1}
+                        showtooltip={true}
+                        ensureUser={true}
+                        disabled={isViewMode}
+                        required={true}
+                        onChange={(items) => {
+                          handlePeopleChange("ZonalHead", items);
+                          setErrors(prev => ({ ...prev, ZonalHead: "" }));
+                        }}
+                        principalTypes={[PrincipalType.User]}
+                        resolveDelay={500}
+                      />
+                      {errors.ZonalHead && (
+                        <span style={{ color: "red", fontSize: 12 }}>
+                          {errors.ZonalHead}
+                        </span>
+                      )} */}
+                    </div>
+                    <div className="form-group">
+                      <input
+                        type="text"
+                        value="ka@princepipes.com"
+                        readOnly
+                      />
+                    </div>
 
-                {/* State Head 
-                <div className="form-group">
-                  <label>State Head*</label>
-                  <PeoplePicker
-                    context={{
-                      absoluteUrl: props.currentSPContext.pageContext.web.absoluteUrl,  // ✅ no more undefined
-                      spHttpClient: props.currentSPContext.spHttpClient,
-                      msGraphClientFactory: props.currentSPContext.msGraphClientFactory
-                    }}
-                    titleText=""
-                    personSelectionLimit={1}
-                    showtooltip={true}
-                    ensureUser={true}
-                    disabled={isViewMode}
-                    required={true}
-                    onChange={(items: any[]) => handlePeopleChange("StateHead", items)}
-                    principalTypes={[PrincipalType.User]}
-                    resolveDelay={500}
-                  />
-                </div>
-                <div className="form-group">
-                  <input
-                    type="text"
-                    value={formData.StateHeadEmail || ""}
-                    readOnly
-                  />
-                </div>
+                    {/* State Head */}
+                    <div className="form-group">
+                      <label>State Head*</label>
+                      <PeoplePicker
+                        context={{
+                          absoluteUrl: props.currentSPContext.pageContext.web.absoluteUrl,  // ✅ no more undefined
+                          spHttpClient: props.currentSPContext.spHttpClient,
+                          msGraphClientFactory: props.currentSPContext.msGraphClientFactory
+                        }}
+                        titleText=""
+                        personSelectionLimit={1}
+                        showtooltip={true}
+                        ensureUser={true}
+                        disabled={isViewMode}
+                        required={true}
+                        onChange={(items) => {
+                          handlePeopleChange("StateHead", items);
+                          setErrors(prev => ({ ...prev, StateHead: "" }));
+                        }}
+                        principalTypes={[PrincipalType.User]}
+                        resolveDelay={500}
+                      />
+                      {errors.StateHead && (
+                        <span style={{ color: "red", fontSize: 12 }}>
+                          {errors.StateHead}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="form-group">
+                      <input
+                        type="text"
+                        value={formData.StateHeadEmail || ""}
+                        readOnly
+                      />
+                    </div>
 
-              </div> */}
+                  </div> 
+                </div>
+              )}
               {/* KYC Details */}
               <h3 className="form-section-title">KYC Details</h3>
               <div >
@@ -1044,7 +1107,7 @@ const handleClose = async () => {
                         required
                   />
                 </div>
-                <div className="form-group"><label>Mobile:</label>
+                <div className="form-group"><label>Mobile</label>
                   <input
                     type="text"
                     value={formData.MobileNo || ""}
@@ -1073,7 +1136,7 @@ const handleClose = async () => {
                 )}
 
                 <div className="form-group">
-                  <label>Email:</label>
+                  <label>Email</label>
                   <input
                     type="email"
                     value={formData.Email || ""}
@@ -1250,7 +1313,7 @@ const handleClose = async () => {
                 </div>
 
                 <div className="form-group">
-                  <label>Mobile:</label>
+                  <label>Mobile</label>
                   <input
                     type="text"
                     value={formData.MobileNo || ""}
@@ -1294,7 +1357,7 @@ const handleClose = async () => {
               <div className="form-grid-0">
                 {/* National Head */}
                 <div className="form-group">
-                  <label>National Head</label>
+                  <label>National Head*</label>
                 </div>
                 <div className="form-group">
                   <input type="text" value={formData.NationalHeadEmail || ""} readOnly />

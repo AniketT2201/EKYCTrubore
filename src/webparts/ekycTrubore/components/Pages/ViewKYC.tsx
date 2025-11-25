@@ -22,74 +22,77 @@ import KycService from '../../utils/KycService';
 import axios from 'axios';
 import DashboardOps from '../../services/BAL/EKYC';
 import { useHistory } from 'react-router-dom';
-
-
+import { delay } from '../../services/Helper';
+ 
+ 
 SPComponentLoader.loadCss('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css');
 SPComponentLoader.loadCss('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css');
 //SPComponentLoader.loadCss('https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css');
 //SPComponentLoader.loadCss('https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css');
-
-
-
+ 
+ 
+ 
 export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkycTruboreProps) => {
-
-	const {httpClient} = props;
-	const [kycData, setKycData] = React.useState<any>(null);
+ 
+  const {httpClient} = props;
+  const [kycData, setKycData] = React.useState<any>(null);
   const histroy =useHistory();
-
-  const kycService = new KycService(props.currentSPContext.httpClient);
+  const kycRef = React.useRef<any>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
+ 
+  const kycService = new KycService(props.currentSPContext.httpClient);
   const [activeTab, setActiveTab] = useState("communication");
   //const [ kycData, setKycData] = useState<KYCData | null>(null);
-	const [sameAsAbove, setSameAsAbove] = useState<boolean>(false);
-	const [customerDetails, setCustomerDetails] = useState<CustomerDetail[]>([]);
-	const [salesDetails, setSalesDetails] = useState<SalesDetail[]>([]);
-	const [salesByCategory, setSalesByCategory] = useState<SalesByCategory[]>([]);
-	const [customerSales, setCustomerSales] = useState<CustomerSales[]>([]);
-	const [estimatedBusiness, setEstimatedBusiness] = useState<EstimatedBusiness[]>([]);
-	const [securityNo, setSecurityNo] = useState<string>('');
-	const [itemID, setItemId] = useState<string>('');
-	const [currentUserEmail, setCurrentUserEmail] = useState<string>('');
-	const [isCurrentApprover, setIsCurrentApprover] = useState<boolean>(false);
-	const [visible, setVisible] = useState(false);
-	const [showButtons, setShowButtons] = useState<{
-		approve: boolean;
-		reject: boolean;
-		update: boolean;
-		navision: boolean;
-		save: boolean;
-		secondaryPatch: boolean;
-	}>({
-		approve: false,
-		reject: false,
-		update: false,
-		navision: false,
-		save: false,
-		secondaryPatch: false,
-	});
+  const [sameAsAbove, setSameAsAbove] = useState<boolean>(false);
+  const [customerDetails, setCustomerDetails] = useState<CustomerDetail[]>([]);
+  const [salesDetails, setSalesDetails] = useState<SalesDetail[]>([]);
+  const [salesByCategory, setSalesByCategory] = useState<SalesByCategory[]>([]);
+  const [customerSales, setCustomerSales] = useState<CustomerSales[]>([]);
+  const [estimatedBusiness, setEstimatedBusiness] = useState<EstimatedBusiness[]>([]);
+  const [securityNo, setSecurityNo] = useState<string>('');
+  const [itemID, setItemId] = useState<string>('');
+  const [currentUserEmail, setCurrentUserEmail] = useState<string>('');
+  const [isCurrentApprover, setIsCurrentApprover] = useState<boolean>(false);
+  const [visible, setVisible] = useState(false);
+  const [showButtons, setShowButtons] = useState<{
+    approve: boolean;
+    reject: boolean;
+    update: boolean;
+    navision: boolean;
+    save: boolean;
+    secondaryPatch: boolean;
+  }>({
+    approve: false,
+    reject: false,
+    update: false,
+    navision: false,
+    save: false,
+    secondaryPatch: false,
+  });
   const [rejectRemark, setRejectRemark] = useState<string>('');
   const [showRejectModal, setShowRejectModal] = useState<boolean>(false);
-  
-
+ 
+ 
   // Example validation errors (later you can replace with real logic)
   // const [errors, setErrors] = useState<{ [key: string]: string }>({
   //     businessName: "",
   //     email: ""
   // });
-
-	useEffect(() => {
-			// trigger fade-in after mount
-			const timer = setTimeout(() => setVisible(true), 100); // small delay
-			return () => clearTimeout(timer);
-		}, []);
-
+ 
+  useEffect(() => {
+      // trigger fade-in after mount
+      const timer = setTimeout(() => setVisible(true), 100); // small delay
+      return () => clearTimeout(timer);
+    }, []);
+ 
   const tabs = [
     { id: "communication", label: "Communication Details", icon: "fa fa-user-circle" },
     { id: "financial", label: "Financial Details", icon: "fa fa-inr" },
     { id: "tax", label: "TAX/GST Details", icon: "fa fa-newspaper-o" },
     { id: "bank", label: "Bank Details", icon: "fa fa-credit-card" }
   ];
-
-	// Fetch URL parameters
+ 
+  // Fetch URL parameters
   const getUrlVars = (): { ID: string; itemID: string } => {
     const vars: { [key: string]: string } = {};
     const query = window.location.hash.substring(0).split('?')[1].split('&');
@@ -99,30 +102,30 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
     });
     return { ID: vars.ID || '', itemID: vars.itemID || '' };
   };
-
-	// Fetch current user email
-	const fetchCurrentUser = async () => {
-		try {
-			const user = await sp.web.currentUser.get();
-			setCurrentUserEmail(user.Email);
+ 
+  // Fetch current user email
+  const fetchCurrentUser = async () => {
+    try {
+      const user = await sp.web.currentUser.get();
+      setCurrentUserEmail(user.Email);
       console.log('current user', user.Email);
-		} catch (error) {
-			console.error('Error fetching user:', error);
-			Swal.fire('Error', 'Failed to fetch user details', 'error');
-		}
-	};
-
-	useEffect(() => {
-		sp.setup({sp: {
-						baseUrl: window.location.origin,
-					},});
-		 fetchCurrentUser();
-		if(currentUserEmail){
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      Swal.fire('Error', 'Failed to fetch user details', 'error');
+    }
+  };
+ 
+  useEffect(() => {
+    sp.setup({sp: {
+            baseUrl: window.location.origin,
+          },});
+     fetchCurrentUser();
+    if(currentUserEmail){
       fetchKYCData();
     }
-	}, [currentUserEmail]);
-
-	// Format date to YYYY-MM-DD
+  }, [currentUserEmail]);
+ 
+  // Format date to YYYY-MM-DD
   const getFormatDate = (date: string): string => {
     const d = new Date(date);
     const dd = String(d.getDate()).padStart(2, '0');
@@ -130,7 +133,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
     const yyyy = d.getFullYear();
     return `${yyyy}-${mm}-${dd}`;
   };
-
+ 
   // Validate PAN
     const validatePAN = (pan: string): boolean => {
       const regex = /^[a-zA-Z]{5}\d{4}[a-zA-Z]{1}$/;
@@ -140,7 +143,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
       }
       return true;
     };
-  
+ 
     // Validate GST
     const validateGST = (gst: string, pan: string): boolean => {
       const regex = /^([0-9]{2}[a-zA-Z]{4}([a-zA-Z]{1}|[0-9]{1})[0-9]{4}[a-zA-Z]{1}([a-zA-Z]|[0-9]){3}){0,15}$/;
@@ -154,203 +157,77 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
       }
       return true;
     };
-
-
-	// Fetch KYC data
-	// const fetchKYCData = async () => {
-	// 	const { ID, itemID } = getUrlVars();
-	// 	// const ID = "76CA35C4149F401C910DA04CB901A4B2";
-	// 	// const itemID = "1867";
-	// 	setSecurityNo(ID);
-	// 	setItemId(itemID);
-
-	// 	const apiUrl = "https://uat.princepipes.com:567/api/CustomerKYC/getCustomerKYCDetails";
-	// 	const data ={ ActionID: "2", SecurityNo: ID }
-	// 	try {
-	// 		// if (!httpClient) {
-	// 		// 	console.error("HttpClient not available");
-	// 		// 	return;
-	// 		// }
-	// 		// // ✅ Similar to your getHttpData pattern
-	// 		// const response: HttpClientResponse = await httpClient.post(
-	// 		// 	apiUrl,
-	// 		// 	HttpClient.configurations.v1,
-	// 		// 	{
-	// 		// 		headers: {
-	// 		// 			"Content-Type": "application/json",
-	// 		// 			"Accept": "application/json",
-	// 		// 		},
-	// 		// 		body: JSON.stringify({ ActionID: "2", SecurityNo: ID }),
-	// 		// 	}
-	// 		// );
-	// 		//const responseData =(await SPCRUDOPS()).postHttpData(apiUrl,data,props)
-	// 		const response = await kycService.getCustomerKYCDetails(data,ID, itemID);
-
-	// 		    if (response.aMessage[0].Result === "100") {
-	// 		      setKycData(response.Table[0]); // store all data in state
-	// 		      console.log("KYC Response: ", response.Table[0]);
-	// 		    } else {
-	// 		      console.error("No data found!");
-	// 		    }
-
-	// 		let  responseData: KYCResponse =await (await SPCRUDOPS()).postHttpData(apiUrl,data,props);
-
-	// 		if (responseData?.aMessage?.[0]?.Result === "100") {
-	// 			const data = responseData.Table[0];
-
-	// 			// ✅ Set KYC data
-	// 			setKycData({
-	// 				...data,
-	// 				DateofBirth: data.DateofBirth ? getFormatDate(data.DateofBirth) : "",
-	// 				ModifiedDatetime: getFormatDate(data.ModifiedDatetime),
-	// 			});
-
-	// 			setCustomerDetails(responseData.Table5);
-	// 			setSalesDetails(responseData.Table4);
-	// 			setSalesByCategory(responseData.Table1);
-	// 			setCustomerSales(responseData.Table3);
-	// 			setEstimatedBusiness(responseData.Table2);
-
-	// 			// ✅ Calculate growth %
-	// 			const prevYear2 = parseFloat(data.GrowthPrecedingYear2) || 0;
-	// 			const prevYear1 = parseFloat(data.GrowthPrecedingYear1) || 0;
-	// 			const lastYear = parseFloat(data.GrowthLastYear) || 0;
-
-	// 			const growth1 = prevYear2 ? ((prevYear1 / prevYear2 - 1) * 100).toFixed(2) : "0";
-	// 			const growth2 = prevYear1 ? ((lastYear / prevYear1 - 1) * 100).toFixed(2) : "0";
-
-	// 			setKycData((prev: any) =>
-	// 				prev
-	// 					? {
-	// 							...prev,
-	// 							Growth: "0",
-	// 							Growth1: growth1,
-	// 							Growth2: growth2,
-	// 						}
-	// 					: prev
-	// 			);
-
-	// 			// ✅ Check current approver & set permissions
-	// 			const currentApproverList = data.CurrentApprover.toLowerCase().split(",").map((email: string) => email.trim());
-	// 			if (currentApproverList.includes(currentUserEmail)) {
-	// 				setIsCurrentApprover(true);
-	// 				setShowButtons({
-	// 					approve: !["7", "8", "9"].includes(data["New KYC Status"]),
-	// 					reject: !["7", "8", "9"].includes(data["New KYC Status"]),
-	// 					update: !["7", "8", "9"].includes(data["New KYC Status"]),
-	// 					navision: data["New KYC Status"] === "7",
-	// 					save: ["7", "8"].includes(data["New KYC Status"]),
-	// 					secondaryPatch: data["New KYC Status"] === "8",
-	// 				});
-	// 			}
-	// 		} else {
-	// 			Swal.fire({
-	// 				icon: "warning",
-	// 				title: "No Data Found",
-	// 				text: "No KYC data was found for this Security Number.",
-	// 			});
-	// 		}
-	// 	} catch (error) {
-	// 		console.error("Error fetching KYC data:", error);
-
-	// 		if (error instanceof Error) {
-	// 			if (error.message.includes("timed out")) {
-	// 				Swal.fire({
-	// 					icon: "error",
-	// 					title: "Request Timeout",
-	// 					text: "The KYC API request timed out. Please try again or contact the administrator.",
-	// 				});
-	// 			} else if (error.message.includes("Failed to fetch")) {
-	// 				Swal.fire({
-	// 					icon: "error",
-	// 					title: "Network Error",
-	// 					text: "Failed to connect to the KYC API. Please check your network or contact the administrator.",
-	// 				});
-	// 			} else {
-	// 				Swal.fire({
-	// 					icon: "error",
-	// 					title: "Error",
-	// 					text: `Failed to fetch KYC data: ${error.message}`,
-	// 				});
-	// 			}
-	// 		} else {
-	// 			Swal.fire({
-	// 				icon: "error",
-	// 				title: "Error",
-	// 				text: "An unexpected error occurred.",
-	// 			});
-	// 		}
-	// 	}
-	// };
-	
-
-	const fetchKYCData = async () => {
+ 
+ 
+ 
+  const fetchKYCData = async () => {
     if (!currentUserEmail) {
       console.log('users email is not set');
       return;
     }
-		const { ID, itemID } = getUrlVars();
-		setSecurityNo(ID);
-		setItemId(itemID);
-	     const _apiUrl = "https://travelservices.princepipes.com/imonwebapi-new/api/TruboreCustomerKYC/getCustomerKYCDetails";
-
-		const requestBody = {
-			ActionID: "2",
-			SecurityNo: ID
-		  };	  
-		try {
-		  const response = await kycService.getCustomerKYCDetails(requestBody,_apiUrl);
-	  
-		  if (response?.aMessage?.[0]?.Result === "100") {
-			const data = response.Table[0];
-	  
-			setKycData({
-			  ...data,
-			  ["Date of Birth"]: data["Date of Birth"] ? getFormatDate(data["Date of Birth"]) : "",
-			  ["Modified Datetime"]: getFormatDate(data["Modified Datetime"]),
-			});
-	  
-			setCustomerDetails(response.Table5);
-			setSalesDetails(response.Table4);
-			setSalesByCategory(response.Table1);
-			setCustomerSales(response.Table3);
-			setEstimatedBusiness(response.Table2);
-	  
-			// Growth %
-			const prevYear2 = parseFloat(data.GrowthPrecedingYear2) || 0;
-			const prevYear1 = parseFloat(data.GrowthPrecedingYear1) || 0;
-			const lastYear = parseFloat(data.GrowthLastYear) || 0;
-	  
-			const growth1 = prevYear2 ? ((prevYear1 / prevYear2 - 1) * 100).toFixed(2) : "0";
-			const growth2 = prevYear1 ? ((lastYear / prevYear1 - 1) * 100).toFixed(2) : "0";
-	  
-			setKycData((prev: any) =>
-			  prev
-				? {
-					...prev,
-					Growth1: growth1,
-					Growth2: growth2,
-				  }
-				: prev
-			);
-	  
-			// Current Approver permissions
-			let currentApproverList = data["Current Approver"].toLowerCase()
-			  .split(",")
-			  .map((email: string) => email.trim());
-
-        //currentApproverList[0] = 'Sharepoint-admin@princepipes.com';
-	  
-			if (currentApproverList.includes(currentUserEmail)) {
-			  setIsCurrentApprover(true);
-			  // setShowButtons({
-				// approve: !["7", "8", "9"].includes(data["KYC Status"]),
-				// reject: !["7", "8", "9"].includes(data["KYC Status"]),
-				// update: !["7", "8", "9"].includes(data["KYC Status"]),
-				// navision: data["KYC Status"] == "7",
-				// save: ["7", "8"].includes(data["KYC Status"]),
-				// secondaryPatch: data["KYC Status"] == "8",
-			  // });
+    const { ID, itemID } = getUrlVars();
+    setSecurityNo(ID);
+    setItemId(itemID);
+       const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/getCustomerKYCDetails";
+ 
+    const requestBody = {
+      ActionID: "2",
+      SecurityNo: ID
+      };    
+    try {
+      const response = await kycService.getCustomerKYCDetails(requestBody,_apiUrl);
+   
+      if (response?.aMessage?.[0]?.Result === "100") {
+      const data = response.Table[0];
+   
+      setKycData({
+        ...data,
+        ["Date of Birth"]: data["Date of Birth"] ? getFormatDate(data["Date of Birth"]) : "",
+        ["Modified Datetime"]: getFormatDate(data["Modified Datetime"]),
+        //itemID: itemID,
+      });
+   
+      setCustomerDetails(response.Table5);
+      setSalesDetails(response.Table4);
+      setSalesByCategory(response.Table1);
+      setCustomerSales(response.Table3);
+      setEstimatedBusiness(response.Table2);
+   
+      // Growth %
+      const prevYear2 = parseFloat(data.GrowthPrecedingYear2) || 0;
+      const prevYear1 = parseFloat(data.GrowthPrecedingYear1) || 0;
+      const lastYear = parseFloat(data.GrowthLastYear) || 0;
+   
+      const growth1 = prevYear2 ? ((prevYear1 / prevYear2 - 1) * 100).toFixed(2) : "0";
+      const growth2 = prevYear1 ? ((lastYear / prevYear1 - 1) * 100).toFixed(2) : "0";
+   
+      setKycData((prev: any) =>
+        prev
+        ? {
+          ...prev,
+          Growth1: growth1,
+          Growth2: growth2,
+          }
+        : prev
+      );
+   
+      // Current Approver permissions
+      let currentApproverList = data["Current Approver"].toLowerCase()
+        .split(",")
+        .map((email: string) => email.trim());
+ 
+       // currentApproverList[0] = 'Sharepoint-admin@princepipes.com';
+   
+      if (currentApproverList.includes(currentUserEmail)) {
+        setIsCurrentApprover(true);
+        // setShowButtons({
+        // approve: !["7", "8", "9"].includes(data["KYC Status"]),
+        // reject: !["7", "8", "9"].includes(data["KYC Status"]),
+        // update: !["7", "8", "9"].includes(data["KYC Status"]),
+        // navision: data["KYC Status"] == "7",
+        // save: ["7", "8"].includes(data["KYC Status"]),
+        // secondaryPatch: data["KYC Status"] == "8",
+        // });
         const kycStatus = data["KYC Status"];
           // switch (kycStatus) {
           //   case "7":
@@ -363,7 +240,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
           //       secondaryPatch: false,
           //     });
           //     break;
-      
+     
           //   case "8":
           //     setShowButtons({
           //       approve: false,
@@ -374,7 +251,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
           //       secondaryPatch: true,
           //     });
           //     break;
-      
+     
           //   case "9":
           //     setShowButtons({
           //       approve: false,
@@ -385,7 +262,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
           //       secondaryPatch: false,
           //     });
           //     break;
-      
+     
           //   default:
           //     setShowButtons({
           //       approve: true,
@@ -434,50 +311,50 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
               secondaryPatch: false,
             });
           }
-          
-      
-			}
-		  }
-      
+         
+     
+      }
+      }
+     
       else {
-			Swal.fire({
-			  icon: "warning",
-			  title: "No Data Found",
-			  text: "No KYC data was found for this Security Number.",
-			});
-		  }
-		} catch (error: any) {
-		  console.error("Error fetching KYC data:", error);
-	  
-		  if (error.message?.includes("timed out")) {
-			errorPopup("Request Timeout", "The KYC API request timed out.");
-		  } else if (error.message?.includes("Failed to fetch")) {
-			errorPopup("Network Error", "Failed to connect to the KYC API.");
-		  } else {
-			errorPopup("Error", `Failed to fetch KYC data: ${error.message}`);
-		  }
-		}
-	  };
-	  
-	  const errorPopup = (title: string, text: string) => {
-		Swal.fire({ icon: "error", title, text });
-	  };
-
+      Swal.fire({
+        icon: "warning",
+        title: "No Data Found",
+        text: "No KYC data was found for this Security Number.",
+      });
+      }
+    } catch (error: any) {
+      console.error("Error fetching KYC data:", error);
+   
+      if (error.message?.includes("timed out")) {
+      errorPopup("Request Timeout", "The KYC API request timed out.");
+      } else if (error.message?.includes("Failed to fetch")) {
+      errorPopup("Network Error", "Failed to connect to the KYC API.");
+      } else {
+      errorPopup("Error", `Failed to fetch KYC data: ${error.message}`);
+      }
+    }
+    };
+   
+    const errorPopup = (title: string, text: string) => {
+    Swal.fire({ icon: "error", title, text });
+    };
+ 
     // Handle PIN code blur
     // Const method that calls the async method to get pin code data
     const handlePinCodeBlur = async () => {
-
+ 
       const pinCode = kycData["Post Code"];
       const _apiUrl = `https://uat.princepipes.com:446/wsVendorDetails.asmx/getPinCode?PinCode=${pinCode}`;
       try {
         // Call the async method to fetch pin code data
-        const data = await fetchPinCodeData(_apiUrl); 
-    
+        const data = await fetchPinCodeData(_apiUrl);
+   
         // Check if the data structure is as expected before accessing it
         if (Array.isArray(data) && data[0] && data[0].Message && Array.isArray(data[0].Message)) {
           // Access the first item of the Message array if it's valid
           const message = data[0].Message[0];
-    
+   
           // Now we can safely access City and State
           setKycData((prev: any) => ({
             ...prev,
@@ -491,10 +368,10 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         console.error("Error in handlePinCodeBlur:", error);
       }
     };
-    
-
-    
-  
+   
+ 
+   
+ 
     // Handle same as above checkbox
     const handleSameAsAbove = (checked: boolean) => {
       setSameAsAbove(checked);
@@ -518,39 +395,49 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         });
       }
     };
-  
+   
+    //currently not working
     const handleSubmit = async (event: Event) => {
       event.preventDefault(); // Prevents default behavior (like page reload)
-    
+   
       // Your logic here
       await updateKyc;
     };
-    
+   
     // Update KYC
     const updateKyc = async () => {
+ 
+      const data = kycRef.current;
+ 
+      // If data.CustomerCode is either null or the string "null", fall back to kycData.CustomerCode
+      const finalCustomerCode = (data && data.CustomerCode && data.CustomerCode !== "null")
+      ? data.CustomerCode
+      : kycData.CustomerCode;
+ 
+     
       if (!kycData) return;
-    
+   
       if (!kycData["Gross Turnover"]) {
         Swal.fire('Error', 'Select Gross Turnover', 'error');
         return;
       }
-    
+   
       if (!kycData["PAN No"]) {
         Swal.fire('Error', 'Enter PAN No', 'error');
         return;
       }
-    
+   
       if (!validatePAN(kycData["PAN No"])) return;
-    
+   
       if (!kycData["GST No"]) {
         Swal.fire('Error', 'Enter GST No', 'error');
         return;
       }
-    
+   
       if (!validateGST(kycData["GST No"], kycData["PAN No"])) return;
-    
+   
       const kycStatus = kycData.SecondaryPatchInstalled ? '9' : '8';
-    
+   
       const requestBody = {
         ActionID: '5',
         SecurityNo: securityNo,
@@ -589,7 +476,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         CreditPeriodPipes: kycData["Credit Period Pipes"],
         CreditLimit: kycData["Credit Limit"],
         NearestDistributor: kycData["Nearest Distributor"],
-        CustomerCode: kycData.CustomerCode,
+        CustomerCode: finalCustomerCode,
         DateofBirth: kycData["Date of Birth"],
         Mobile_nos: kycData.Mobile_nos,
         Name_of_the_person: kycData.Name_of_the_person,
@@ -597,120 +484,127 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         Remark: kycData.Remark,
         SecondaryPatchInstalled: kycData.SecondaryPatchInstalled,
         //...kycData,
-        KYCStatus: kycData["KYC Status"],
-        ModifiedBy: kycData.ModifiedBy,
+        KYCStatus: kycStatus,
+        ModifiedBy: "10691",
       };
-    
-      const _apiUrl = "https://travelservices.princepipes.com/imonwebapi-new/api/TruboreCustomerKYC/updateCustomerKYCDetails";
-    
+   
+      const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/updateCustomerKYCDetails";
+   
       try {
         // Using HttpClient to send the POST request
-         await kycService.updateCustomerKYCDetails(requestBody, _apiUrl);
-    
+         const response = await kycService.updateCustomerKYCDetails(requestBody, _apiUrl);
+   
         await updateListItem();
         Swal.fire('Updated!', 'KYC Details Updated successfully', 'success');
        // <Link to={`/`}></Link>
        histroy.push('/')
-        // const   siteurl = props.currentSPContext.pageContext.web.absoluteUrl 
-        //   window.location.href =`${siteurl}+'/'`                                   
+        // const   siteurl = props.currentSPContext.pageContext.web.absoluteUrl
+        //   window.location.href =`${siteurl}+'/'`                                  
         // Optionally, redirect after success
         // window.location.href = 'https://princepipes.sharepoint.com/sites/E_KycUAT/E_KYC_Library/EKYC_PrinceDashboard.aspx';
       } catch (error) {
         console.error('Error updating KYC:', error);
-    
+   
         Swal.fire('Error', `Failed to update KYC: ${error.message}`, 'error');
       }
     };
-    
-  
+   
+ 
     // Approve KYC
     const approveKyc = async () => {
       if (!kycData) return;
-    
+   
       const requestBody = {
         ActionID: '6',
         ModifiedBy: 'XYZ', // Replace with actual user ID if necessary
         KYCStatus: kycData["New KYC Status"],
-        SHPID: kycData.ID,
+        SHPID: itemID,
         SecurityNo: securityNo,
       };
-    
-      const _apiUrl = "https://travelservices.princepipes.com/imonwebapi-new/api/TruboreCustomerKYC/approveCustomerKYCDetails";
-    
+   
+      const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/approveCustomerKYCDetails";
+   
       try {
         // Using HttpClient to send the POST request
         const response = await kycService.approveCustomerKYCDetails(requestBody, _apiUrl);
-    
+   
         await updateSHPID();
         await updatePending();
         Swal.fire('Success', 'Send For Approval', 'success');
         histroy.push('/')
       } catch (error) {
         console.error('Error approving KYC:', error);
-    
+   
         Swal.fire('Error', `Failed to approve KYC: ${error.message}`, 'error');
       }
     };
-    
-  
+   
+ 
     // Reject KYC
     const rejectKyc = async () => {
       if (!kycData) return;
-    
+   
       const requestBody = {
         ActionID: '7',
         ModifiedBy: '9961',
         KYCStatus: '1', // Assuming "1" represents rejected status
         SecurityNo: securityNo,
         IsPending: kycData.IsPending,
-        SHPID: kycData.ID,
+        SHPID: itemID,
         RejectRemark: rejectRemark,
       };
-    
-      const _apiUrl = "https://travelservices.princepipes.com/imonwebapi-new/api/TruboreCustomerKYC/RejectCustomerKYCDetails";
-    
+   
+      const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/RejectCustomerKYCDetails";
+   
       try {
         // Using HttpClient to send the POST request
-        await kycService.rejectCustomerKYCDetails(requestBody, _apiUrl);
-    
+        const response = await kycService.rejectCustomerKYCDetails(requestBody, _apiUrl);
+   
         setShowRejectModal(false);
         Swal.fire('Success', 'KYC Rejected', 'success');
         histroy.push('/')
       } catch (error) {
         console.error('Error rejecting KYC:', error);
-    
+   
         Swal.fire('Error', `Failed to reject KYC: ${error.message}`, 'error');
       }
     };
-    
-  
+   
+ 
     // Update SharePoint ID
     const updateSHPID = async () => {
       const requestBody = {
         ActionID: '8',
         SecurityNo: securityNo,
-        SHPID: kycData?.ID,
+        SHPID: itemID,
       };
-    
-      const _apiUrl = "https://travelservices.princepipes.com/imonwebapi-new/api/TruboreCustomerKYC/updateSHPID";
-    
+   
+      const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/updateSHPID";
+   
       try {
         // Using HttpClient to send the POST request
-        await kycService.updateSHPID(requestBody, _apiUrl);
+        const response = await kycService.updateSHPID(requestBody, _apiUrl);
       } catch (error) {
         console.error('Error updating SHPID:', error);
-    
+   
         Swal.fire('Error', `Failed to update SHPID: ${error.message}`, 'error');
       }
     };
-    
-  
+   
+ 
     // Update SharePoint list item
     const updateListItem = async () => {
       if (!kycData || !itemID) return;
-
+ 
       try {
-
+        const data = kycRef.current;
+ 
+        // If data.CustomerCode is either null or the string "null", fall back to kycData.CustomerCode
+        const customerCode = (data && data.CustomerCode && data.CustomerCode !== "null")
+        ? data.CustomerCode
+        : kycData.CustomerCode;
+ 
+ 
       const spCrudOpsInstance = await SPCRUDOPS;
        (await spCrudOpsInstance()).updateData(
       "Ekyc",
@@ -719,27 +613,27 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         FirmName: kycData["Firm Name"],
           MobileNo:''+ kycData["Mobile No"],
           Email: kycData.Email,
-          CustomerID: kycData.CustomerCode,
+          CustomerID: customerCode,
           ApprovedBy: kycData.IsPending,
-
+ 
       },
       props
       );
-  
-      
-        
+ 
+     
+       
         console.log('SharePoint list item updated');
       } catch (error) {
         console.error('Error updating SharePoint item:', error);
       }
     };
-  
+ 
     // Update pending status
     const updatePending = async () => {
       if (!kycData || !itemID) return;
-  
+ 
       try {
-
+ 
         const spCrudOpsInstance = await SPCRUDOPS;
         (await spCrudOpsInstance()).updateData(
         "Ekyc",
@@ -754,11 +648,11 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         console.error('Error updating pending status:', error);
       }
     };
-  
+ 
     // Create in Navision
     const createInNavision = async () => {
       if (!kycData) return;
-    
+   
       const params = new URLSearchParams({
         newCustNo: securityNo,
         name: kycData["Firm Name"],
@@ -773,6 +667,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         pANNo: kycData["PAN No"],
         stateCode: kycData.State,
         gSTRegistrationNo: kycData["GST No"],
+        gsTCustTypeoption: '1',
         GSTregT: '1',
         birthDate: kycData["Date of Birth"],
         mobile: kycData["Mobile No"],
@@ -781,37 +676,45 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         areaSalesManager: '',
         ownersName: kycData.Name,
         creditLimit: kycData["Credit Limit"],
-        //dateofcreation: kycData["Modified Datetime"],
-        CreatedinNavision: kycData.Dateofcreation,
+        dateofcreation: kycData["Modified Datetime"],
+        CreatedinNavision: kycData["Modified Datetime"],
         CustomerID: kycData.CustomerCode,
         DepositAmount: kycData["Deposit Amount"],
       });
-    
-      const _apiUrl = `https://travelservices.princepipes.com/wscustomerdetails.asmx/updateCustomerDetial?${params.toString()}`;
-    
+   
+      const _apiUrl = `https://uat.princepipes.com:446/wscustomerdetails.asmx/updateCustomerDetial?${params.toString()}`;
+   
       try {
         // Using HttpClient to send the GET request
         const response = await kycService.createCustomerInNavision(_apiUrl);
-
+ 
         if (response[0] && response[0].Result === 'Failed') {
           Swal.fire('Error', 'Server Busy!!', 'error');
+         
         } else {
-          setKycData((prev: any) =>
-            prev ? { ...prev, CustomerCode: response[0].CustomerCode } : prev
-          );
-          Swal.fire('Success', 'Details Updated in Navision!!', 'success');
+          // Build updated object synchronously
+          const updatedKycData = {
+            ...kycData,  // Retain the name 'kycData'
+            CustomerCode: response[0].CustomerCode,
+          };
+ 
+          // Update ref first (sync)
+          kycRef.current = updatedKycData;
+ 
+          // Update state (async)
+          setKycData(updatedKycData);
+ 
           await updateKyc();
-          //<Link to={`/`}></Link>
-      // const   siteurl = props.currentSPContext.pageContext.web.absoluteUrl 
-      //     window.location.href =`${siteurl}+'/'`
-      histroy.push('/')
+          Swal.fire('Success', 'Details Updated in Navision!!', 'success');
+          histroy.push('/');
         }
       } catch (error) {
         console.error('Error updating Navision:', error);
         Swal.fire('Error', 'Server Busy!!', 'error');
       }
     };
-    
+
+  
   
 	  
   return (
@@ -1502,64 +1405,83 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
 								I hereby authorise sharing of the information furnished on the form.
 							</label>
 						</div>
-            {showButtons.secondaryPatch && (
-              <div className="col-span-2 mt-3 mb-3">
-                <label className="flex items-center">
+            {showButtons.secondaryPatch && ( 
+              <div className="col">
+                <label className="modcheckbox">
                   <input
                     type="checkbox"
                     checked={kycData?.SecondaryPatchInstalled}
-                    onChange={(e) => setKycData((prev: any) => prev ? ({ ...prev, SecondaryPatchInstalled: e.target.checked }) : prev)}
-                    onClick={() => updateKyc()}
+                    onChange={(e) =>
+                      setKycData((prev: any) =>
+                        prev ? { ...prev, SecondaryPatchInstalled: e.target.checked } : prev
+                      )
+                    }
+                    //onClick={() => updateKyc()}
                   />
-                  <Link to={"/"}></Link>
-                  <span className="ml-2">DMS Training of Distributor is completed, and Secondary Patch has been installed.</span>
+                  <span>
+                    DMS Training of Distributor is completed, and Secondary Patch has been installed.
+                  </span>
                 </label>
               </div>
             )}
 
-            
-            {/* <button className="bg-green-500 text-white p-2 rounded" onClick={createInNavision}>Create In Navision</button> */}
-
             {showButtons.navision && (
-              <div>
-                <button type='button' className="bg-green-500 text-white p-2 rounded m-3" onClick={createInNavision}>Create In Navision</button>
-              </div>
-            )}
+              <button type="button" className="btn btn-green" onClick={createInNavision}>
+                Create In Navision
+              </button>
+            )} 
+
             {isCurrentApprover && (
-              <div className="col-span-2 flex space-x-4">
+              <div className="buttonrows">
                 {showButtons.update && (
-                  <button type='button' className="bg-blue-500 text-white p-2 rounded" onClick={updateKyc}>Update</button>
-                )}
+                  <button type="button" className="btn btn-blue" onClick={updateKyc}>
+                    Update
+                  </button>
+                )} 
+
                 {showButtons.approve && (
-                  <button type='button' className="bg-green-500 text-white p-2 rounded" onClick={approveKyc}>Approve</button>
+                  <button type="button" className="btn btn-green" onClick={approveKyc}>
+                    Approve
+                  </button>
                 )}
+
                 {showButtons.reject && (
-                  <button type='button' className="bg-red-500 text-white p-2 rounded" onClick={() => setShowRejectModal(true)}>Reject</button>
-                )}
+                  <button type="button" className="btn btn-red" onClick={() => setShowRejectModal(true)}>
+                    Reject
+                  </button>
+                )} 
+
                 {showButtons.save && (
-                  <button type='button' className="bg-green-600 text-white p-2 rounded" onClick={updateKyc}>Submit</button>
-                )}
+                  <button type="button" className="btn btn-green" onClick={updateKyc}>
+                    Submit
+                  </button>
+               )}
               </div>
             )}
-             {/* <button className="bg-green-600 text-white p-2 rounded m-3" onClick={updateKyc}>Submit</button> */}
-            {/* Reject Modal */}
+
             {showRejectModal && (
-              <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center">
-                <div className="bg-white p-6 rounded shadow-lg w-full max-w-lg">
-                  <div className="flex justify-end">
-                    <button className="text-red-500" onClick={() => setShowRejectModal(false)}>×</button>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium">Reject Remark</label>
-                    <textarea
-                      className="w-full p-2 border rounded"
-                      value={rejectRemark}
-                      onChange={(e) => setRejectRemark(e.target.value)}
-                    ></textarea>
-                  </div>
-                  <div className="mt-4">
-                    <button type='button' className="bg-red-500 text-white p-2 rounded" onClick={rejectKyc}>Reject</button>
-                  </div>
+              <div className="modalbackdrop">
+                <div className="modalbox">
+                  <button className="modalclose" onClick={() => setShowRejectModal(false)} style={{fontWeight: 700}}>
+                    ×
+                  </button>
+
+                  <label className="block text-sm font-medium" style={{fontSize: 'medium', fontWeight: 500}}>Reject Remark</label>
+
+                  <textarea
+                    className="modtextarea"
+                    style={{marginTop: '6px'}}
+                    value={rejectRemark}
+                    onChange={(e) => setRejectRemark(e.target.value)}
+                  />
+
+                  <button
+                    type="button"
+                    className="btn btn-red mt-3"
+                    onClick={rejectKyc}
+                  >
+                    Reject
+                  </button>
                 </div>
               </div>
             )}

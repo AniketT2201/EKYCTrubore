@@ -2193,3 +2193,212 @@ h3 {
   opacity: 1;
   transform: translateY(0);
 }
+
+
+
+/* ---------------------------------------------------- */
+/*  Global Layout Utilities                             */
+/* ---------------------------------------------------- */
+.buttonrows {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.col {
+  margin-top: 12px;
+  margin-bottom: 12px;
+}
+
+/* ---------------------------------------------------- */
+/*  Modern Checkbox                                     */
+/* ---------------------------------------------------- */
+.modcheckbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 15px;
+  user-select: none;
+}
+
+.modcheckbox input[type="checkbox"] {
+  appearance: none;
+  width: 23px;
+  height: 23px;
+  border: 2px solid #888;
+  border-radius: 4px;
+  display: inline-block;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.modcheckbox input[type="checkbox"]:checked {
+  background-color: #4f46e5;
+  border-color: #4f46e5;
+}
+
+.modcheckbox input[type="checkbox"]:checked::after {
+  content: "✔";
+  position: absolute;
+  top: -2px;
+  left: 3px;
+  font-size: 16px;
+  color: white;
+}
+
+/* ---------------------------------------------------- */
+/*  Modern Buttons                                       */
+/* ---------------------------------------------------- */
+.btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 15px;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.2s ease;
+  color: white;
+  margin: 5px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.3);
+  transform: skewX(-20deg);
+  transition: 0.4s ease;
+}
+
+.btn:hover::after {
+  left: 150%;
+}
+
+.btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+}
+
+.btn:active {
+  transform: translateY(0px) scale(0.97);
+}
+
+.btn:active::after {
+  content: "";
+  position: absolute;
+  width: 200%;
+  height: 200%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  animation: ripple 0.5s ease-out;
+}
+
+@keyframes ripple {
+  from { transform: translate(-50%, -50%) scale(0); opacity: 0.8; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+/* Button themes - Gradient Modern UI */
+.btn-green {
+  background: linear-gradient(135deg, #16a34a, #22c55e);
+}
+.btn-green:hover {
+  background: linear-gradient(135deg, #15803d, #16a34a);
+}
+
+.btn-blue {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+}
+.btn-blue:hover {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+}
+
+.btn-red {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+}
+.btn-red:hover {
+  background: linear-gradient(135deg, #b91c1c, #dc2626);
+}
+
+
+/* ---------------------------------------------------- */
+/*  Modal Backdrop & Animation                           */
+/* ---------------------------------------------------- */
+.modalbackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.25s ease;
+  z-index: 999;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ---------------------------------------------------- */
+/*  Modal Box                                            */
+/* ---------------------------------------------------- */
+.modalbox {
+  backdrop-filter: blur(12px);
+  background: rgba(255,255,255,0.7);
+  border-radius: 10px;
+  width: 100%;
+  max-width: 480px;
+  padding: 24px;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  animation: slideUp 0.35s ease;
+  position: relative;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: translateY(0px); opacity: 1; }
+}
+
+/* ---------------------------------------------------- */
+/*  Modal Close Button                                   */
+/* ---------------------------------------------------- */
+.modalclose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 24px;
+  color: #ef4444;
+  position: absolute;
+  top: 12px;
+  right: 16px;
+}
+
+/* ---------------------------------------------------- */
+/*  Textarea                                             */
+/* ---------------------------------------------------- */
+.modtextarea {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  min-height: 100px;
+  outline: none;
+  font-size: 14px;
+  transition: border 0.2s ease;
+}
+
+.modtextarea:focus {
+  border-color: #3b82f6;
+}
