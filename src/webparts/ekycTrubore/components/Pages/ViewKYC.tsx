@@ -57,6 +57,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
   const [showButtons, setShowButtons] = useState<{
     approve: boolean;
     reject: boolean;
+    reject1: boolean;
     update: boolean;
     navision: boolean;
     save: boolean;
@@ -64,6 +65,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
   }>({
     approve: false,
     reject: false,
+    reject1: false,
     update: false,
     navision: false,
     save: false,
@@ -168,7 +170,11 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
     const { ID, itemID } = getUrlVars();
     setSecurityNo(ID);
     setItemId(itemID);
-       const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/getCustomerKYCDetails";
+    // UAT url
+    //const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/getCustomerKYCDetails";
+
+    // Production url
+    const _apiUrl = "https://travelservices.princepipes.com/imonwebapi-new/api/TruboreCustomerKYC/getCustomerKYCDetails";
  
     const requestBody = {
       ActionID: "2",
@@ -278,6 +284,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
             setShowButtons({
               approve: false,
               reject: false,
+              reject1: false,
               update: false,
               navision: true,
               save: true,
@@ -287,6 +294,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
             setShowButtons({
               approve: false,
               reject: false,
+              reject1: false,
               update: false,
               navision: false,
               save: true,
@@ -296,6 +304,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
             setShowButtons({
               approve: false,
               reject: false,
+              reject1: false,
               update: false,
               navision: false,
               save: false,
@@ -305,6 +314,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
             setShowButtons({
               approve: true,
               reject: true,
+              reject1: true,
               update: true,
               navision: false,
               save: false,
@@ -340,12 +350,15 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
     Swal.fire({ icon: "error", title, text });
     };
  
-    // Handle PIN code blur
-    // Const method that calls the async method to get pin code data
+    
+    // Handle PIN code blur Const method that calls the async method to get pin code data
     const handlePinCodeBlur = async () => {
  
       const pinCode = kycData["Post Code"];
-      const _apiUrl = `https://uat.princepipes.com:446/wsVendorDetails.asmx/getPinCode?PinCode=${pinCode}`;
+      // UAT url
+      //const _apiUrl = `https://uat.princepipes.com:446/wsVendorDetails.asmx/getPinCode?PinCode=${pinCode}`;
+      // Production url
+      const _apiUrl = `https://travelservices.princepipes.com/wsVendorDetails.asmx/getPinCode?PinCode=${pinCode}`;
       try {
         // Call the async method to fetch pin code data
         const data = await fetchPinCodeData(_apiUrl);
@@ -488,7 +501,11 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         ModifiedBy: "10691",
       };
    
-      const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/updateCustomerKYCDetails";
+      // UAT url
+      //const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/updateCustomerKYCDetails";
+
+      // Production url
+      const _apiUrl = "https://travelservices.princepipes.com/imonwebapi-new/api/TruboreCustomerKYC/updateCustomerKYCDetails";
    
       try {
         // Using HttpClient to send the POST request
@@ -496,12 +513,8 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
    
         await updateListItem();
         Swal.fire('Updated!', 'KYC Details Updated successfully', 'success');
-       // <Link to={`/`}></Link>
-       histroy.push('/')
-        // const   siteurl = props.currentSPContext.pageContext.web.absoluteUrl
-        //   window.location.href =`${siteurl}+'/'`                                  
-        // Optionally, redirect after success
-        // window.location.href = 'https://princepipes.sharepoint.com/sites/E_KycUAT/E_KYC_Library/EKYC_PrinceDashboard.aspx';
+        histroy.push('/');
+
       } catch (error) {
         console.error('Error updating KYC:', error);
    
@@ -521,8 +534,12 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         SHPID: itemID,
         SecurityNo: securityNo,
       };
-   
-      const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/approveCustomerKYCDetails";
+      
+      // UAT url
+      //const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/approveCustomerKYCDetails";
+
+      // Production url
+      const _apiUrl = "https://travelservices.princepipes.com/imonwebapi-new/api/TruboreCustomerKYC/approveCustomerKYCDetails";
    
       try {
         // Using HttpClient to send the POST request
@@ -554,7 +571,11 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         RejectRemark: rejectRemark,
       };
    
-      const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/RejectCustomerKYCDetails";
+      // UAT url
+      //const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/RejectCustomerKYCDetails";
+
+      // Production url
+      const _apiUrl = "https://travelservices.princepipes.com/imonwebapi-new/api/TruboreCustomerKYC/RejectCustomerKYCDetails";
    
       try {
         // Using HttpClient to send the POST request
@@ -579,7 +600,11 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         SHPID: itemID,
       };
    
-      const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/updateSHPID";
+      // UAT url
+      //const _apiUrl = "https://uat.princepipes.com:567/api/TruboreCustomerKYC/updateSHPID";
+
+      // Production url
+      const _apiUrl = "https://travelservices.princepipes.com/imonwebapi-new/api/TruboreCustomerKYC/updateSHPID";
    
       try {
         // Using HttpClient to send the POST request
@@ -682,7 +707,11 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         DepositAmount: kycData["Deposit Amount"],
       });
    
-      const _apiUrl = `https://uat.princepipes.com:446/wscustomerdetails.asmx/updateCustomerDetial?${params.toString()}`;
+      // UAT url
+      //const _apiUrl = `https://uat.princepipes.com:446/wscustomerdetails.asmx/updateCustomerDetial?${params.toString()}`;
+
+      // Production url
+      const _apiUrl = `https://travelservices.princepipes.com/wscustomerdetails.asmx/updateCustomerDetial?${params.toString()}`;
    
       try {
         // Using HttpClient to send the GET request
@@ -1423,6 +1452,11 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
                   </span>
                 </label>
               </div>
+            )}
+            {showButtons.reject1 && (
+              <button type='button' className='btn btn-red' onClick={() => setRejectRemark("")}>
+                Reject1
+              </button>
             )}
 
             {showButtons.navision && (
