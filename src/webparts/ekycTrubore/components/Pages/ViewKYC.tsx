@@ -989,7 +989,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
 									</tr>
 									<tr>
 										<td>% Growth</td>
-										<td><input type="text" className="financial-details-table-input" readOnly value={kycData?.Growth || ''} /></td>
+										<td><input type="text" className="financial-details-table-input" readOnly value={kycData?.Growth || '0'} /></td>
 										<td><input type="text" className="financial-details-table-input" readOnly value={kycData?.Growth1 || ''} /></td>
 										<td><input type="text" className="financial-details-table-input" readOnly value={kycData?.Growth2 || ''} /></td>
 									</tr>
@@ -1383,16 +1383,12 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
                     {["Yes", "No"].map(option => (
                     <label key={option} className="flex items-center">
                     <input
-                          type="radio"
-                          name="blankCheque"
-                          value={option}
-                          checked={kycData?.blankCheque === option}
-                          onChange={(e) =>
-                            setKycData((prev: any)  => {
-                              return ({ ...prev, blankCheque: e.target.value });
-                            })
-                          }
-                        />
+                      type="radio"
+                      name="blankCheque"
+                      value={option}
+                      checked={kycData?.Blankcheck === option}
+                      readOnly
+                    />
                     <span className="ml-2">{option}</span>
                     </label>
                     ))}
