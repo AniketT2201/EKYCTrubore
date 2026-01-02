@@ -177,7 +177,7 @@ export default function DashboardOps(): IDashboardOps {
                 ApprovedBy: item.ApprovedBy,
                 PipingSystem: item.PipingSystem,
                 NantionalHeadNameT: item.NationalHeadEmail,
-                ZoneHeadNameT: "ka@princepipes.com",
+                ZoneHeadNameT: item.ZonalHeadEmail,
                 StateHeadNameT: item.StateHeadEmail,
                 SecurityCode: item.SecurityCode
 

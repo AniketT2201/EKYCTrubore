@@ -23,6 +23,8 @@ import axios from 'axios';
 import DashboardOps from '../../services/BAL/EKYC';
 import { useHistory } from 'react-router-dom';
 import { delay } from '../../services/Helper';
+import { IHistory } from '../../services/interface/IHistory';
+import HistoryOps from '../../services/BAL/ApproverHistory';
  
  
 SPComponentLoader.loadCss('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css');
@@ -39,6 +41,9 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
   const histroy =useHistory();
   const kycRef = React.useRef<any>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [attachments, setAttachments] = useState<{name: string, url: string}[]>([]);
  
   const kycService = new KycService(props.currentSPContext.httpClient);
   const [activeTab, setActiveTab] = useState("communication");
@@ -73,6 +78,12 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
   });
   const [rejectRemark, setRejectRemark] = useState<string>('');
   const [showRejectModal, setShowRejectModal] = useState<boolean>(false);
+  // Show / hide history popup
+  const [showHistoryModal, setShowHistoryModal] = React.useState(false);
+  const [history, setHistory] = React.useState<IHistory[]>([]);
+  const popupRef = React.useRef<HTMLDivElement>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = React.useState(false);
+  const [loading, setLoading] = useState(false);
  
  
   // Example validation errors (later you can replace with real logic)
@@ -188,6 +199,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
    
       setKycData({
         ...data,
+        itemID: itemID,
         ["Date of Birth"]: data["Date of Birth"] ? getFormatDate(data["Date of Birth"]) : "",
         ["Modified Datetime"]: getFormatDate(data["Modified Datetime"]),
         //itemID: itemID,
@@ -224,7 +236,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
  
        // currentApproverList[0] = 'Sharepoint-admin@princepipes.com';
    
-      if (currentApproverList.includes(currentUserEmail)) {
+      if (currentApproverList.includes(currentUserEmail.toLowerCase())) {
         setIsCurrentApprover(true);
         // setShowButtons({
         // approve: !["7", "8", "9"].includes(data["KYC Status"]),
@@ -419,7 +431,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
    
     // Update KYC
     const updateKyc = async () => {
- 
+      setLoading(true);
       const data = kycRef.current;
  
       // If data.CustomerCode is either null or the string "null", fall back to kycData.CustomerCode
@@ -513,12 +525,14 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
    
         await updateListItem();
         Swal.fire('Updated!', 'KYC Details Updated successfully', 'success');
-        histroy.push('/');
 
       } catch (error) {
         console.error('Error updating KYC:', error);
    
         Swal.fire('Error', `Failed to update KYC: ${error.message}`, 'error');
+      } finally {
+        setLoading(false);
+        histroy.push('/');
       }
     };
    
@@ -526,7 +540,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
     // Approve KYC
     const approveKyc = async () => {
       if (!kycData) return;
-   
+      setLoading(true);
       const requestBody = {
         ActionID: '6',
         ModifiedBy: 'XYZ', // Replace with actual user ID if necessary
@@ -548,11 +562,13 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         await updateSHPID();
         await updatePending();
         Swal.fire('Success', 'Send For Approval', 'success');
-        histroy.push('/')
       } catch (error) {
         console.error('Error approving KYC:', error);
    
         Swal.fire('Error', `Failed to approve KYC: ${error.message}`, 'error');
+      } finally {
+        setLoading(false);
+        histroy.push('/');
       }
     };
    
@@ -560,7 +576,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
     // Reject KYC
     const rejectKyc = async () => {
       if (!kycData) return;
-   
+      setLoading(true);
       const requestBody = {
         ActionID: '7',
         ModifiedBy: '9961',
@@ -580,14 +596,18 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
       try {
         // Using HttpClient to send the POST request
         const response = await kycService.rejectCustomerKYCDetails(requestBody, _apiUrl);
-   
+        // Insert history record
+        await insertHistory(kycData);
         setShowRejectModal(false);
         Swal.fire('Success', 'KYC Rejected', 'success');
-        histroy.push('/')
+
       } catch (error) {
         console.error('Error rejecting KYC:', error);
    
         Swal.fire('Error', `Failed to reject KYC: ${error.message}`, 'error');
+      } finally {
+        setLoading(false);
+        histroy.push('/');
       }
     };
    
@@ -668,16 +688,81 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
         },
         props
         );
+        // Insert history record
+        await insertHistory(kycData);
         console.log('Pending status updated');
       } catch (error) {
         console.error('Error updating pending status:', error);
       }
     };
  
+    // Insert Approvers data for using History 
+    const insertHistory = async (kycData: any) => {
+      const insertResult = await HistoryOps().insertHistoryData(kycData, props);
+      //itemId = insertResult;
+      await uploadFilesForId(insertResult);
+    }
+
+    // Helper: upload all pending newFiles for given item id------------------------------------>
+    const uploadFilesForId = async (itemId: number) => {
+        if (newFiles.length === 0) return;
+    
+        try {
+          // get existing names to avoid duplicates (case-insensitive)
+          const existingFileNames = attachments
+            .filter(a => a && a.name)
+            .map(a => a.name.toLowerCase());
+    
+          const uploaded: string[] = [];
+          const skipped: string[] = [];
+    
+    
+          for (const f of newFiles) {
+            if (!(f instanceof File)) continue; // guard
+            if (existingFileNames.includes(f.name.toLowerCase())) {
+              // skip duplicates to avoid SharePoint error
+              skipped.push(f.name);
+              continue;
+            }
+            await HistoryOps().uploadAttachment("WorkflowHistory", itemId, f, props);
+            uploaded.push(f.name);
+          }
+    
+    
+          // Refresh attachments
+          //await loadAttachments(itemId);
+    
+    
+          // Clear pending files that were uploaded
+          setNewFiles([]);
+    
+    
+          // Clear file input element if present
+          const input = document.getElementById("fileUpload") as HTMLInputElement | null;
+          if (input) input.value = "";
+    
+    
+          if (uploaded.length > 0) {
+            console.log(`Uploaded: ${uploaded.join(', ')}`);
+            alert(`Data Inserted and Successfully Uploaded: ${uploaded.join(', ')}.`);
+          }
+          if (skipped.length > 0) {
+            console.log(`Skipped (already existed): ${skipped.join(', ')}`);
+          }
+    
+    
+        } catch (err) {
+          console.error("Error uploading files:", err);
+          throw err; // Rethrow to handle in submit
+        } finally {
+          
+        }
+      };
+      
     // Create in Navision
     const createInNavision = async () => {
       if (!kycData) return;
-   
+      setLoading(true);
       const params = new URLSearchParams({
         newCustNo: securityNo,
         name: kycData["Firm Name"],
@@ -735,19 +820,51 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
  
           await updateKyc();
           Swal.fire('Success', 'Details Updated in Navision!!', 'success');
-          histroy.push('/');
+
         }
       } catch (error) {
         console.error('Error updating Navision:', error);
         Swal.fire('Error', 'Server Busy!!', 'error');
+      } finally {
+        setLoading(false);
+        histroy.push('/');
       }
     };
 
-  
+    //for clearning input field of an attachment section
+    const handleRemoveFile = (idx: number) => {
+      setNewFiles((prev) => {
+        const updated = prev.filter((_, i) => i !== idx);
+
+        // 🔑 rebuild FileList using DataTransfer
+        if (fileInputRef.current) {
+          const dt = new DataTransfer();
+          updated.forEach((file) => dt.items.add(file));
+          fileInputRef.current.files = dt.files;
+        }
+
+        return updated;
+      });
+    };
+	  const handleHistoryOpen = async () => {
+      setShowHistoryModal(true);
+      const data = await HistoryOps().getHistoryData(itemID as any, props);
+      setHistory(data);
+    };
+
+    const handleHistoryClose = () => {
+      setShowHistoryModal(false);
+    };
   
 	  
   return (
-    <div className={`form-wrapper fade-in ${visible ? 'visible' : ''}`}>
+    <div className={`form-wrapper`}>
+      {/* SPINNER */}
+      {loading && (
+        <div className="loadingOverlay">
+          <div className="spinner"></div>
+        </div>
+      )}
 			{/* Tabs */}
 			<div className='tabsContainer'>
 				<div className="tabs">
@@ -768,7 +885,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
 
 
       {/* Form Body */}
-      <div className={`form-container fade-in ${visible ? 'visible' : ''}`} style={{ transitionDelay: '0.8s'}}>
+      <div className={`form-container`}>
         {activeTab === "communication" && (
           <form className="custom-form">
             {/* Row 1 */}
@@ -1422,6 +1539,66 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
                 <input type="text" readOnly value={kycData?.CustomerCode || ''}/>
               </div>
             </div>
+            <div className="row">
+              {/* Attachments section */}
+              <div className="field">
+                <label>Attachments</label>
+                <div className="form-group">
+                  { (
+                    <>
+                      {/* File Upload */}
+                      <input
+                        type="file"
+                        id="fileUpload"
+                        multiple
+                        ref={fileInputRef}
+                        onChange={(e) =>
+                          setNewFiles(e.target.files ? Array.from(e.target.files) : [])
+                        }
+                        
+                      />
+                      {/* New Files Preview */}
+                      {newFiles.length > 0 && (
+                        <div className="new-files">
+                          {newFiles.map((file, idx) => (
+                            <div key={idx} className="file-chip">
+                              <span className="file-name">{file.name}</span>
+                              <button
+                                type="button"
+                                className="remove-btn"
+                                onClick={() => handleRemoveFile(idx)}
+                              >
+                                ✖
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+              <div className="field">
+                <label>Remarks</label>
+                <textarea
+                  value={kycData?.newRemark || ""}
+                  onChange={(e) => setKycData({ ...kycData, newRemark: e.target.value })}
+              
+                />
+              </div>
+              <div className="field">
+                <button
+                  type="button"
+                  className="btn-view-history"
+                  onClick={() => handleHistoryOpen()}
+                  title="View Approval History"
+                >
+                  🛈 View History
+                </button>
+
+
+              </div>
+            </div>
 						<div className="declaration">
 							<input type="checkbox" checked={true} disabled={true}></input>
 							<label>
@@ -1449,14 +1626,14 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
                 </label>
               </div>
             )}
-            {showButtons.reject1 && (
+            {/* {showButtons.reject1 && (
               <button type='button' className='btn btn-red' onClick={() => setRejectRemark("")}>
                 Reject1
               </button>
-            )}
+            )} */}
 
             {showButtons.navision && (
-              <button type="button" className="btn btn-green" onClick={createInNavision}>
+              <button type="button" className="btns btns-green" onClick={createInNavision}>
                 Create In Navision
               </button>
             )} 
@@ -1464,25 +1641,25 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
             {isCurrentApprover && (
               <div className="buttonrows">
                 {showButtons.update && (
-                  <button type="button" className="btn btn-blue" onClick={updateKyc}>
+                  <button type="button" className="btns btns-blue" onClick={updateKyc}>
                     Update
                   </button>
                 )} 
 
                 {showButtons.approve && (
-                  <button type="button" className="btn btn-green" onClick={approveKyc}>
+                  <button type="button" className="btns btns-green" onClick={approveKyc}>
                     Approve
                   </button>
                 )}
 
                 {showButtons.reject && (
-                  <button type="button" className="btn btn-red" onClick={() => setShowRejectModal(true)}>
+                  <button type="button" className="btns btns-red" onClick={() => setShowRejectModal(true)}>
                     Reject
                   </button>
                 )} 
 
                 {showButtons.save && (
-                  <button type="button" className="btn btn-green" onClick={updateKyc}>
+                  <button type="button" className="btns btns-green" onClick={updateKyc}>
                     Submit
                   </button>
                )}
@@ -1507,7 +1684,7 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
 
                   <button
                     type="button"
-                    className="btn btn-red mt-3"
+                    className="btns btns-red mt-3"
                     onClick={rejectKyc}
                   >
                     Reject
@@ -1519,6 +1696,60 @@ export const ViewKYC: React.FunctionComponent<IEkycTruboreProps> = (props: IEkyc
 					</form>
 				)}
       </div>
+      {showHistoryModal && (
+        <div className="popup-overlay-history">
+          <div className="popup-card-history" ref={popupRef}>
+
+            {/* Header */}
+            <div className="popup-header-history">
+              <span className="header-icon">📜</span>
+              <h3>Approval History</h3>
+              <button className="close-btn" onClick={handleHistoryClose}>✖</button>
+            </div>
+
+            {/* Body */}
+            <div className="history-body">
+              {isLoadingHistory ? (
+                <p className="loading-text">Loading...</p>
+              ) : history.length === 0 ? (
+                <p className="no-history">No history available.</p>
+              ) : (
+                history.map((item, idx) => (
+                  <div key={idx} className="history-item">
+
+                    <div className="history-meta">
+                      <span className="history-user">👤 {item.Author}</span>
+                      <span className="history-date">📅 {new Date(item.Created as any).toLocaleString()}</span>
+                    </div>
+
+                    <div className="history-remark">
+                      📝 {item.newRemark as any}
+                    </div>
+
+                    {(item.Attachment as any)?.length > 0 && (
+                      <div className="history-attachments">
+                        {(item.Attachment as any).map((file: any, fIdx: number) => (
+                          <a
+                            key={fIdx}
+                            href={file.ServerRelativeUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="file-link"
+                          >
+                            📎️{file.FileName}
+                          </a>
+                        ))}
+                      </div>
+                    )}
+
+                  </div>
+                ))
+              )}
+            </div>
+
+          </div>
+        </div>
+      )}
     </div>
   );
 
